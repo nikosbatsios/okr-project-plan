@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive OKR Tracking System | Project Plan</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Calm Corporate -->
+    <!-- Application Structure Plan: The SPA is designed as a narrative journey for stakeholders. It starts with a high-level vision, then presents an interactive system blueprint where users can click to explore the structure of each list (Objectives, KRs, Initiatives). It follows with an animated data-flow diagram to explain the automation, then provides tangible mockups of the final Power BI reports using Chart.js. A visual timeline concludes the presentation. This structure was chosen to transform a static document into an engaging story, moving from the "what" and "how" to the "why" and "when", making the project's value immediately apparent to a management audience. -->
+    <!-- Visualization & Content Choices:
+        - Report Info: System architecture (3 lists). -> Goal: Organize & Inform. -> Viz: Interactive diagram with clickable nodes (HTML/CSS/JS). -> Interaction: Clicking a node reveals a modal with the list's detailed structure table. -> Justification: More engaging and less overwhelming than three static tables. -> Method: Vanilla JS and Tailwind CSS.
+        - Report Info: Automation logic (KR progress updates Objective). -> Goal: Explain Change. -> Viz: Animated data flow diagram. -> Interaction: Animation is automatic on scroll. -> Justification: Visually explains a technical concept simply. -> Method: JS adding/removing CSS classes.
+        - Report Info: Power BI report descriptions. -> Goal: Inform & Demonstrate Value. -> Viz: Tabbed interface with four distinct chart mockups (Gauge, Bar, Doughnut, Hierarchy). -> Interaction: Users click tabs to switch between mocked-up reports. -> Justification: Shows stakeholders a tangible preview of the final product, which is more impactful than text descriptions. -> Library: Chart.js.
+        - Report Info: Project Timeline. -> Goal: Inform. -> Viz: Horizontal timeline. -> Interaction: None. -> Justification: Clear, standard way to present project phases. -> Method: HTML/CSS with Tailwind.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8f9fa;
+        }
+        .section-title {
+            font-size: 2.25rem;
+            font-weight: 700;
+            color: #1a202c;
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+        .section-subtitle {
+            font-size: 1.125rem;
+            color: #4a5568;
+            text-align: center;
+            max-width: 48rem;
+            margin: 0 auto 4rem auto;
+        }
+        .modal {
+            transition: opacity 0.3s ease;
+        }
+        .blueprint-node {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            cursor: pointer;
+        }
+        .blueprint-node:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .flow-arrow {
+            opacity: 0.3;
+            transition: opacity 0.5s ease, color 0.5s ease;
+        }
+        .flow-arrow.active {
+            opacity: 1;
+            color: #2563eb;
+        }
+        .flow-node.active {
+            box-shadow: 0 0 0 3px #2563eb;
+        }
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: -0.875rem;
+            transform: translateY(-50%);
+            width: 1.75rem;
+            height: 1.75rem;
+            border-radius: 9999px;
+            background-color: #ffffff;
+            border: 4px solid #3b82f6;
+        }
+        .chart-container {
+            position: relative;
+            margin-left: auto;
+            margin-right: auto;
+            height: 24rem;
+            width: 100%;
+            max-width: 48rem;
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <!-- Header / Hero Section -->
+    <header class="bg-white shadow-sm">
+        <div class="container mx-auto px-6 py-16 text-center">
+            <h1 class="text-4xl md:text-5xl font-bold text-gray-900 leading-tight">Modernizing OKR Tracking</h1>
+            <p class="mt-4 text-lg text-gray-600 max-w-3xl mx-auto">An interactive overview of the project to build a dynamic, transparent, and automated system for managing our Objectives, Key Results, and Initiatives.</p>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-6 py-12">
+        <!-- System Blueprint Section -->
+        <section id="blueprint" class="py-16">
+            <h2 class="section-title">System Blueprint</h2>
+            <p class="section-subtitle">This project is built on a proven three-tier model. Click on any component below to explore its detailed structure and see how it connects to the others.</p>
+            
+            <div class="flex flex-col items-center space-y-4">
+                <!-- Objective Node -->
+                <div id="node-objectives" data-target="modal-objectives" class="blueprint-node w-full max-w-md bg-green-100 border-2 border-green-500 rounded-lg p-6 text-center">
+                    <h3 class="text-xl font-bold text-green-800">Objectives</h3>
+                    <p class="text-green-700 mt-1">"Where do we want to go?"</p>
+                </div>
+
+                <div class="text-5xl font-thin text-gray-400">↓</div>
+
+                <!-- Key Results Node -->
+                <div id="node-krs" data-target="modal-krs" class="blueprint-node w-full max-w-md bg-yellow-100 border-2 border-yellow-500 rounded-lg p-6 text-center">
+                    <h3 class="text-xl font-bold text-yellow-800">Key Results</h3>
+                    <p class="text-yellow-700 mt-1">"How do we know we're getting there?"</p>
+                </div>
+
+                <div class="text-5xl font-thin text-gray-400">↓</div>
+
+                <!-- Initiatives Node -->
+                <div id="node-initiatives" data-target="modal-initiatives" class="blueprint-node w-full max-w-md bg-blue-100 border-2 border-blue-500 rounded-lg p-6 text-center">
+                    <h3 class="text-xl font-bold text-blue-800">Initiatives</h3>
+                    <p class="text-blue-700 mt-1">"What will we do to get there?"</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Data Flow Section -->
+        <section id="data-flow" class="py-16 bg-white rounded-lg shadow-lg my-16">
+            <h2 class="section-title">Automated Data Flow</h2>
+            <p class="section-subtitle">The system eliminates manual calculations. When a Key Result is updated, progress automatically rolls up to the parent Objective. The animation below demonstrates this real-time data flow.</p>
+            
+            <div class="flex flex-col md:flex-row items-center justify-center gap-4 md:gap-8 p-8">
+                <div id="flow-kr" class="flow-node border-2 rounded-lg p-4 text-center w-48 transition-shadow duration-300">
+                    <h4 class="font-bold">Key Result</h4>
+                    <p class="text-sm">User updates Progress</p>
+                </div>
+
+                <div id="flow-arrow-1" class="flow-arrow text-4xl font-light transform md:-rotate-0">→</div>
+                
+                <div id="flow-pa" class="flow-node border-2 rounded-lg p-4 text-center w-48 transition-shadow duration-300">
+                    <h4 class="font-bold">Power Automate</h4>
+                    <p class="text-sm">Workflow is triggered</p>
+                </div>
+                
+                <div id="flow-arrow-2" class="flow-arrow text-4xl font-light transform md:-rotate-0">→</div>
+
+                <div id="flow-obj" class="flow-node border-2 rounded-lg p-4 text-center w-48 transition-shadow duration-300">
+                    <h4 class="font-bold">Objective</h4>
+                    <div class="w-full bg-gray-200 rounded-full h-2.5 mt-2">
+                      <div id="flow-progress" class="bg-green-600 h-2.5 rounded-full transition-all duration-1000" style="width: 25%"></div>
+                    </div>
+                    <p class="text-sm">Progress is updated</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Reporting Section -->
+        <section id="reporting" class="py-16">
+            <h2 class="section-title">Reporting & Analytics</h2>
+            <p class="section-subtitle">The final outcome is a series of Power BI dashboards providing clear, actionable insights for all levels of the organization. Below are interactive mockups of the planned reports.</p>
+            
+            <div class="w-full max-w-5xl mx-auto">
+                <div class="border-b border-gray-200">
+                    <nav id="report-tabs" class="-mb-px flex space-x-8" aria-label="Tabs">
+                        <!-- Tabs will be generated by JS -->
+                    </nav>
+                </div>
+                <div id="report-content" class="mt-8">
+                    <!-- Report content will be generated by JS -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Timeline Section -->
+        <section id="timeline" class="py-16">
+            <h2 class="section-title">Project Timeline</h2>
+            <p class="section-subtitle">The project will be delivered in two phases to ensure rapid delivery of core functionality and value.</p>
+            <div class="relative w-full max-w-4xl mx-auto mt-12">
+                <div class="absolute left-1/2 -ml-0.5 w-1 h-full bg-blue-300"></div>
+                <!-- Phase 1 -->
+                <div class="relative timeline-item mb-12">
+                    <div class="ml-auto w-5/12 bg-white p-6 rounded-lg shadow-md">
+                        <h3 class="text-lg font-bold text-blue-600">Phase 1: Foundation & Automation</h3>
+                        <p class="text-sm text-gray-500 mb-3">Target: End of July 2025</p>
+                        <p class="font-semibold mb-2">Deliverables:</p>
+                        <ul class="list-disc list-inside text-gray-600">
+                            <li>Deployment of the 3 Microsoft Lists.</li>
+                            <li>Core Power Automate workflow for progress roll-up.</li>
+                        </ul>
+                    </div>
+                </div>
+                <!-- Phase 2 -->
+                <div class="relative timeline-item">
+                    <div class="mr-auto w-5/12 bg-white p-6 rounded-lg shadow-md">
+                        <h3 class="text-lg font-bold text-blue-600">Phase 2: Analytics & Visualization</h3>
+                        <p class="text-sm text-gray-500 mb-3">Target: August 2025</p>
+                        <p class="font-semibold mb-2">Deliverables:</p>
+                        <ul class="list-disc list-inside text-gray-600">
+                            <li>Development of Power BI dashboards.</li>
+                            <li>User training and documentation.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+    
+    <!-- Modals for Blueprint -->
+    <div id="modal-objectives" class="modal fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 opacity-0 pointer-events-none">
+        <div class="bg-white rounded-lg shadow-2xl w-full max-w-3xl transform transition-transform duration-300 scale-95">
+             <div class="p-6">
+                <div class="flex justify-between items-start">
+                    <h3 class="text-2xl font-bold text-gray-800">List: Objectives</h3>
+                    <button class="modal-close-btn text-gray-500 hover:text-gray-800">&times;</button>
+                </div>
+                <p class="text-gray-600 mt-2 mb-4">The "What we want to achieve." This list holds the unique, high-level goals.</p>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50"><tr><th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Column Name</th><th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th><th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th></tr></thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            <tr><td class="px-6 py-4 font-semibold">Title</td><td class="px-6 py-4">Single line of text</td><td class="px-6 py-4">The unique, high-level goal.</td></tr>
+                            <tr><td class="px-6 py-4 font-semibold">Level</td><td class="px-6 py-4">Choice</td><td class="px-6 py-4">Scope: Company, Team, or Individual.</td></tr>
+                            <tr><td class="px-6 py-4 font-semibold">Owner / Team</td><td class="px-6 py-4">Person or Group</td><td class="px-6 py-4">The person or team championing the objective.</td></tr>
+                            <tr><td class="px-6 py-4 font-semibold">Aligns To</td><td class="px-6 py-4">Lookup</td><td class="px-6 py-4">Link to a higher-level objective in this same list.</td></tr>
+                            <tr><td class="px-6 py-4 font-semibold">Period</td><td class="px-6 py-4">Choice</td><td class="px-6 py-4">Timeframe for the objective (e.g., Q2 2025).</td></tr>
+                            <tr><td class="px-6 py-4 font-semibold">Progress (%)</td><td class="px-6 py-4">Number</td><td class="px-6 py-4">An **automatically calculated** score.</td></tr>
+                            <tr><td class="px-6 py-4 font-semibold">Status</td><td class="px-6 py-4">Choice</td><td class="px-6 py-4">Visual indicator: On Track, At Risk, etc.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+             </div>
+        </div>
+    </div>
+    <div id="modal-krs" class="modal fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 opacity-0 pointer-events-none">
+        <div class="bg-white rounded-lg shadow-2xl w-full max-w-3xl transform transition-transform duration-300 scale-95">
+             <div class="p-6">
+                <div class="flex justify-between items-start">
+                    <h3 class="text-2xl font-bold text-gray-800">List: Key Results</h3>
+                    <button class="modal-close-btn text-gray-500 hover:text-gray-800">&times;</button>
+                </div>
+                <p class="text-gray-600 mt-2 mb-4">The "How we measure success." This list holds the measurable outcomes.</p>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50"><tr><th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Column Name</th><th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th><th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th></tr></thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            <tr><td class="px-6 py-4 font-semibold">Title</td><td class="px-6 py-4">Single line of text</td><td class="px-6 py-4">The description of the measurable outcome.</td></tr>
+                            <tr><td class="px-6 py-4 font-semibold">Parent Objective</td><td class="px-6 py-4">Lookup</td><td class="px-6 py-4">A **required** link to the `Objectives` list.</td></tr>
+                            <tr><td class="px-6 py-4 font-semibold">Owner</td><td class="px-6 py-4">Person or Group</td><td class="px-6 py-4">The individual responsible for this outcome.</td></tr>
+                            <tr><td class="px-6 py-4 font-semibold">Progress (%)</td><td class="px-6 py-4">Number</td><td class="px-6 py-4">A **manually updated** score that drives calculations.</td></tr>
+                            <tr><td class="px-6 py-4 font-semibold">Status</td><td class="px-6 py-4">Choice</td><td class="px-6 py-4">Visual indicator of the Key Result's health.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+             </div>
+        </div>
+    </div>
+    <div id="modal-initiatives" class="modal fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 opacity-0 pointer-events-none">
+        <div class="bg-white rounded-lg shadow-2xl w-full max-w-3xl transform transition-transform duration-300 scale-95">
+             <div class="p-6">
+                <div class="flex justify-between items-start">
+                    <h3 class="text-2xl font-bold text-gray-800">List: Initiatives</h3>
+                    <button class="modal-close-btn text-gray-500 hover:text-gray-800">&times;</button>
+                </div>
+                <p class="text-gray-600 mt-2 mb-4">The "What work we will do." This list holds the specific projects and epics.</p>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50"><tr><th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Column Name</th><th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th><th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th></tr></thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            <tr><td class="px-6 py-4 font-semibold">Title</td><td class="px-6 py-4">Single line of text</td><td class="px-6 py-4">The name of the project or epic, often from Jira.</td></tr>
+                            <tr><td class="px-6 py-4 font-semibold">Parent Key Result</td><td class="px-6 py-4">Lookup</td><td class="px-6 py-4">A **required** link to the `Key Results` list.</td></tr>
+                            <tr><td class="px-6 py-4 font-semibold">Status</td><td class="px-6 py-4">Choice</td><td class="px-6 py-4">Project execution status: Not Started, In Progress, etc.</td></tr>
+                            <tr><td class="px-6 py-4 font-semibold">Team</td><td class="px-6 py-4">Choice</td><td class="px-6 py-4">The team executing the work (e.g., DAP, COF).</td></tr>
+                            <tr><td class="px-6 py-4 font-semibold">Jira Link</td><td class="px-6 py-4">Hyperlink</td><td class="px-6 py-4">A direct URL to the epic/task in Jira.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+             </div>
+        </div>
+    </div>
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Blueprint Modal Logic
+            const blueprintNodes = document.querySelectorAll('.blueprint-node');
+            blueprintNodes.forEach(node => {
+                node.addEventListener('click', () => {
+                    const targetModalId = node.dataset.target;
+                    const modal = document.getElementById(targetModalId);
+                    modal.classList.remove('opacity-0', 'pointer-events-none');
+                    modal.querySelector('div > div').classList.remove('scale-95');
+                });
+            });
+
+            document.querySelectorAll('.modal-close-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const modal = e.currentTarget.closest('.modal');
+                    modal.querySelector('div > div').classList.add('scale-95');
+                    modal.classList.add('opacity-0', 'pointer-events-none');
+                });
+            });
+
+            // Data Flow Animation Logic
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        startFlowAnimation();
+                    }
+                });
+            }, { threshold: 0.5 });
+            observer.observe(document.getElementById('data-flow'));
+
+            const flowKR = document.getElementById('flow-kr');
+            const flowPA = document.getElementById('flow-pa');
+            const flowObj = document.getElementById('flow-obj');
+            const arrow1 = document.getElementById('flow-arrow-1');
+            const arrow2 = document.getElementById('flow-arrow-2');
+            const progressBar = document.getElementById('flow-progress');
+
+            function startFlowAnimation() {
+                // Reset
+                [flowKR, flowPA, flowObj].forEach(el => el.classList.remove('active'));
+                [arrow1, arrow2].forEach(el => el.classList.remove('active'));
+                progressBar.style.width = '25%';
+
+                setTimeout(() => flowKR.classList.add('active'), 500);
+                setTimeout(() => arrow1.classList.add('active'), 1000);
+                setTimeout(() => {
+                    flowKR.classList.remove('active');
+                    flowPA.classList.add('active');
+                }, 1500);
+                setTimeout(() => arrow2.classList.add('active'), 2000);
+                setTimeout(() => {
+                    flowPA.classList.remove('active');
+                    flowObj.classList.add('active');
+                    progressBar.style.width = '85%';
+                }, 2500);
+                setTimeout(() => flowObj.classList.remove('active'), 4000);
+            }
+
+            // Reporting Section Logic
+            const reportTabsContainer = document.getElementById('report-tabs');
+            const reportContentContainer = document.getElementById('report-content');
+            let activeChart = null;
+            
+            const reports = {
+                'Executive Dashboard': {
+                    description: 'A high-level, at-a-glance view of company-wide objectives with progress gauges and status indicators for leadership.',
+                    chartType: 'gauge',
+                },
+                'Strategic Hierarchy': {
+                    description: 'An interactive view showing the top-to-bottom alignment of all objectives, from company to team and individual goals.',
+                    chartType: 'hierarchy' // This will be a bar chart for mockup purposes
+                },
+                'Team Performance': {
+                    description: 'A filterable report for managers to track their team\'s specific OKRs, the progress of linked initiatives, and identify blockers.',
+                    chartType: 'bar'
+                },
+                'Initiative Tracker': {
+                    description: 'Shows the status of all initiatives (Jira epics) and the Key Results they are impacting, connecting work to strategy.',
+                    chartType: 'doughnut'
+                }
+            };
+
+            function renderTabs() {
+                reportTabsContainer.innerHTML = '';
+                Object.keys(reports).forEach((name, index) => {
+                    const isActive = index === 0;
+                    reportTabsContainer.innerHTML += `
+                        <button data-report="${name}" class="report-tab whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${isActive ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}">
+                            ${name}
+                        </button>
+                    `;
+                });
+            }
+
+            function renderReportContent(reportName) {
+                if (activeChart) {
+                    activeChart.destroy();
+                }
+                const report = reports[reportName];
+                reportContentContainer.innerHTML = `
+                    <p class="text-gray-600 mb-6">${report.description}</p>
+                    <div class="chart-container">
+                        <canvas id="report-chart"></canvas>
+                    </div>
+                `;
+                renderChart(report.chartType);
+            }
+            
+            function renderChart(type) {
+                const ctx = document.getElementById('report-chart').getContext('2d');
+                let config = {};
+                switch(type) {
+                    case 'gauge':
+                        config = {
+                            type: 'doughnut',
+                            data: {
+                                labels: ['Progress', 'Remaining'],
+                                datasets: [{
+                                    data: [72, 28],
+                                    backgroundColor: ['#16a34a', '#e5e7eb'],
+                                    borderColor: ['#16a34a', '#e5e7eb'],
+                                    circumference: 180,
+                                    rotation: 270,
+                                }]
+                            },
+                            options: { responsive: true, maintainAspectRatio: false, cutout: '80%', plugins: { legend: { display: false }, tooltip: { enabled: false } } }
+                        };
+                        break;
+                    case 'hierarchy':
+                         config = {
+                            type: 'bar',
+                            data: {
+                                labels: ['Obj: Enhance Platform', 'Obj: Increase Engagement', 'Obj: Launch New Market'],
+                                datasets: [{
+                                    label: 'Team Objectives Aligned',
+                                    data: [3, 5, 2],
+                                    backgroundColor: '#3b82f6',
+                                }]
+                            },
+                            options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, title: { display: true, text: 'Company Objectives & Alignment Count' } } }
+                        };
+                        break;
+                    case 'bar':
+                        config = {
+                            type: 'bar',
+                            data: {
+                                labels: ['DAP Team', 'COF Team'],
+                                datasets: [
+                                    { label: 'On Track', data: [5, 3], backgroundColor: '#22c55e' },
+                                    { label: 'At Risk', data: [2, 1], backgroundColor: '#f97316' },
+                                    { label: 'Behind', data: [1, 2], backgroundColor: '#ef4444' }
+                                ]
+                            },
+                            options: { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true }, y: { stacked: true } }, plugins: { title: { display: true, text: 'Team OKR Status' } } }
+                        };
+                        break;
+                    case 'doughnut':
+                        config = {
+                            type: 'doughnut',
+                            data: {
+                                labels: ['Completed', 'In Progress', 'Not Started', 'Blocked'],
+                                datasets: [{
+                                    data: [12, 25, 8, 3],
+                                    backgroundColor: ['#10b981', '#3b82f6', '#6b7280', '#ef4444'],
+                                }]
+                            },
+                            options: { responsive: true, maintainAspectRatio: false, plugins: { title: { display: true, text: 'Initiative Status (from Jira)' } } }
+                        };
+                        break;
+                }
+                activeChart = new Chart(ctx, config);
+            }
+            
+            reportTabsContainer.addEventListener('click', (e) => {
+                if (e.target.classList.contains('report-tab')) {
+                    const reportName = e.target.dataset.report;
+                    
+                    document.querySelectorAll('.report-tab').forEach(tab => {
+                        tab.classList.remove('border-blue-500', 'text-blue-600');
+                        tab.classList.add('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
+                    });
+                    
+                    e.target.classList.add('border-blue-500', 'text-blue-600');
+                    e.target.classList.remove('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
+                    
+                    renderReportContent(reportName);
+                }
+            });
+
+            // Initial render
+            renderTabs();
+            renderReportContent('Executive Dashboard');
+        });
+    </script>
+</body>
+</html>
